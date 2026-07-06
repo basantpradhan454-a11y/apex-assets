@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: #0A0A0B;
+    color: #F5F5F7;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection {
+    background: rgba(212, 175, 55, 0.3);
+    color: #F5F5F7;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(20, 20, 22, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(42, 42, 46, 0.8);
+  }
+  .glass-modal {
+    background: rgba(15, 15, 18, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+  }
+  .gold-text {
+    background: linear-gradient(135deg, #D4AF37 0%, #E8C84B 50%, #A8862B 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .gold-border {
+    border: 1px solid rgba(212, 175, 55, 0.3);
+  }
+  .gold-glow {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+  }
+  .green-glow {
+    box-shadow: 0 0 16px rgba(0, 230, 118, 0.25);
+  }
+  .red-glow {
+    box-shadow: 0 0 16px rgba(255, 59, 59, 0.25);
+  }
+  .card-surface {
+    background: linear-gradient(145deg, #1A1A1E 0%, #0F0F12 100%);
+    border: 1px solid rgba(42, 42, 46, 0.8);
+    border-radius: 16px;
+  }
+  .btn-gold {
+    background: linear-gradient(135deg, #D4AF37 0%, #E8C84B 100%);
+    color: #0A0A0B;
+    font-weight: 600;
+    border: none;
+    transition: all 0.3s ease;
+  }
+  .btn-gold:hover {
+    box-shadow: 0 4px 20px rgba(212, 175, 55, 0.4);
+    transform: translateY(-1px);
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(42, 42, 46, 0.8);
+    color: #A0A0A8;
+    transition: all 0.3s ease;
+  }
+  .btn-ghost:hover {
+    border-color: rgba(212, 175, 55, 0.4);
+    color: #D4AF37;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #0A0A0B;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #2A2A2E;
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #D4AF37;
+  }
+  .shimmer-bg {
+    background: linear-gradient(
+      90deg,
+      #141416 0%,
+      #1A1A1E 50%,
+      #141416 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+  .demo-watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 120px;
+    font-weight: 800;
+    color: rgba(212, 175, 55, 0.03);
+    pointer-events: none;
+    z-index: 1;
+    letter-spacing: 8px;
+  }
+}

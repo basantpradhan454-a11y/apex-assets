@@ -1,0 +1,176 @@
+import { motion } from 'framer-motion'
+import { useStore } from '../context/store'
+import { Wallet as WalletIcon, ArrowDownCircle, ArrowUpCircle, Shield, CreditCard, Check, Upload } from 'lucide-react'
+import { useState } from 'react'
+
+const mockTransactions = [
+  { id: 'tx1', type: 'buy', card: 'Golden Ape Genesis', amount: 1250.50, date: '2025-07-05', status: 'completed' },
+  { id: 'tx2', type: 'sell', card: 'Neon Tiger Wave', amount: 680.75, date: '2025-07-04', status: 'completed' },
+  { id: 'tx3', type: 'buy', card: 'Cosmic Rider', amount: 3400.00, date: '2025-07-03', status: 'completed' },
+  { id: 'tx4', type: 'mint', card: 'Volt Lynx', amount: 50.00, date: '2025-07-02', status: 'completed' },
+  { id: 'tx5', type: 'buy', card: 'Diamond Pegasus', amount: 890.00, date: '2025-07-01', status: 'completed' },
+]
+
+export default function Wallet() {
+  const { user, mode } = useStore()
+  const [kycSubmitted, setKycSubmitted] = useState(false)
+  const [creditsAmount, setCreditsAmount] = useState(500)
+
+  const balance = mode === 'demo' ? user?.virtual_balance : user?.real_wallet_balance
+
+  return (
+    <div className="p-8 max-w-5xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h1 className="text-3xl font-bold mb-2">
+          <span className="gold-text">Wallet</span>
+        </h1>
+        <p className="text-apex-white-dim text-sm">
+          Manage your credits, transactions, and KYC verification.
+        </p>
+      </motion.div>
+
+      <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        {/* Balance Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card-surface p-6 lg:col-span-2"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-lg bg-apex-black-card flex items-center justify-center gold-border">
+                <WalletIcon size={20} className="text-apex-gold" />
+              </div>
+              <div>
+                <p className="text-xs text-apex-white-dim">
+                  {mode === 'demo' ? 'Virtual Credits Balance' : 'Apex Credits Balance'}
+                </p>
+                <p className="text-3xl font-bold gold-text">{balance?.toLocaleString()}</p>
+              </div>
+            </div>
+            <span className={`px-3 py-1 text-xs rounded-full ${
+              mode === 'demo' ? 'bg-apex-gold/10 text-apex-gold gold-border' : 'bg-apex-green/10 text-apex-green border border-apex-green/30'
+            }`}>
+              {mode === 'demo' ? 'DEMO' : 'LIVE'}
+            </span>
+          </div>
+
+          {/* Purchase Credits */}
+          {user?.is_kyc_verified && (
+            <div className="mt-6 pt-6 border-t border-apex-black-border">
+              <p className="text-xs text-apex-white-dim mb-3">Purchase Apex Credits</p>
+              <div className="flex gap-3">
+                <div className="flex-1 relative">
+                  <CreditCard size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-apex-white-dim" />
+                  <input
+                    type="number"
+                    value={creditsAmount}
+                    onChange={(e) => setCreditsAmount(parseInt(e.target.value) || 0)}
+                    className="w-full bg-apex-black-card border border-apex-black-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-apex-white focus:gold-border focus:outline-none"
+                  />
+                </div>
+                <button className="btn-gold px-6 py-2.5 rounded-lg text-sm">
+                  Buy Credits
+                </button>
+              </div>
+              <p className="text-[10px] text-apex-white-dim/50 mt-2">
+                Payment processed via Razorpay / PhonePe secure gateway.
+              </p>
+            </div>
+          )}
+        </motion.div>
+
+        {/* KYC Status */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="card-surface p-6"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <Shield size={20} className={user?.is_kyc_verified ? 'text-apex-green' : 'text-apex-white-dim'} />
+            <h3 className="text-sm font-semibold">KYC Verification</h3>
+          </div>
+
+          {user?.is_kyc_verified ? (
+            <div className="text-center py-4">
+              <div className="w-12 h-12 rounded-full bg-apex-green/10 flex items-center justify-center mx-auto mb-3">
+                <Check size={24} className="text-apex-green" />
+              </div>
+              <p className="text-sm text-apex-white font-medium">Verified Trader</p>
+              <p className="text-xs text-apex-white-dim mt-1">Live trading unlocked</p>
+            </div>
+          ) : kycSubmitted ? (
+            <div className="text-center py-4">
+              <div className="w-12 h-12 rounded-full bg-apex-gold/10 flex items-center justify-center mx-auto mb-3 animate-glow-pulse">
+                <Upload size={20} className="text-apex-gold" />
+              </div>
+              <p className="text-sm text-apex-white font-medium">KYC Under Review</p>
+              <p className="text-xs text-apex-white-dim mt-1">Verification in 24-48 hours</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs text-apex-white-dim mb-4">
+                Complete KYC to unlock live trading with real credits and payment gateway access.
+              </p>
+              <button
+                onClick={() => setKycSubmitted(true)}
+                className="w-full btn-ghost py-2.5 rounded-lg text-sm inline-flex items-center justify-center gap-2"
+              >
+                <Upload size={14} /> Start KYC Verification
+              </button>
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Transaction History */}
+      <div className="card-surface overflow-hidden">
+        <div className="p-6 border-b border-apex-black-border">
+          <h3 className="text-sm font-semibold">Transaction History</h3>
+        </div>
+        <div className="divide-y divide-apex-black-border">
+          {mockTransactions.map((tx) => (
+            <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-apex-black-card/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                  tx.type === 'buy' ? 'bg-apex-red/10' : tx.type === 'sell' ? 'bg-apex-green/10' : 'bg-apex-gold/10'
+                }`}>
+                  {tx.type === 'buy' ? (
+                    <ArrowDownCircle size={16} className="text-apex-red" />
+                  ) : tx.type === 'sell' ? (
+                    <ArrowUpCircle size={16} className="text-apex-green" />
+                  ) : (
+                    <CreditCard size={16} className="text-apex-gold" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-apex-white font-medium">{tx.card}</p>
+                  <p className="text-xs text-apex-white-dim">{tx.type.toUpperCase()} · {tx.date}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className={`text-sm font-mono font-medium ${
+                  tx.type === 'sell' ? 'text-apex-green' : 'text-apex-red'
+                }`}>
+                  {tx.type === 'sell' ? '+' : '-'}{tx.amount.toFixed(2)}
+                </p>
+                <p className="text-xs text-apex-white-dim">{tx.status}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <p className="text-[10px] text-apex-white-dim/60 text-center mt-8">
+        Apex Assets is a digital collectible marketplace. Assets are virtual and intended for
+        entertainment purposes only, holding no external financial value.
+      </p>
+    </div>
+  )
+}
