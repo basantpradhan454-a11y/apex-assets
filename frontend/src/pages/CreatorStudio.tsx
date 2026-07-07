@@ -1,11 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, Plus, Zap, Check } from 'lucide-react'
-import { useStore } from '../context/store'
-import api from '../api/client'
+import { useStore, type TradeCard } from '../context/store'
 
 export default function CreatorStudio() {
-  const { user, mode } = useStore()
+  const { user, mode, addCard, remixDesign, setRemixDesign } = useStore()
   const [name, setName] = useState('')
   const [supply, setSupply] = useState(10)
   const [rarity, setRarity] = useState(50)
@@ -14,6 +13,15 @@ export default function CreatorStudio() {
   const [minting, setMinting] = useState(false)
   const [minted, setMinted] = useState(false)
   const [mintedCardId, setMintedCardId] = useState('')
+
+  // Load a design picked from the Design Gallery's "Remix" button
+  useEffect(() => {
+    if (remixDesign) {
+      setName(remixDesign.name)
+      setImagePreview(remixDesign.image_url)
+      setRemixDesign(null)
+    }
+  }, [remixDesign, setRemixDesign])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -28,26 +36,32 @@ export default function CreatorStudio() {
     if (!name) return
     setMinting(true)
     setMinted(false)
+    await new Promise((r) => setTimeout(r, 900))
 
-    try {
-      const { data } = await api.post('/cards/mint', {
-        name,
-        minting_supply: supply,
-        rarity_score: rarity,
-        creator_tag: creatorTag,
-        is_demo_asset: mode === 'demo',
-        image_url: imagePreview,
-      })
-      setMintedCardId(data.card_id || 'APEX-' + Math.random().toString(36).substr(2, 8).toUpperCase())
-      setMinted(true)
-    } catch {
-      // Frontend-only demo mint
-      await new Promise((r) => setTimeout(r, 1500))
-      setMintedCardId('APEX-' + Math.random().toString(36).substr(2, 8).toUpperCase())
-      setMinted(true)
-    } finally {
-      setMinting(false)
+    const cardId = 'APEX-' + Math.random().toString(36).substr(2, 8).toUpperCase()
+    const startPrice = parseFloat((20 + Math.random() * 200).toFixed(2))
+
+    const newCard: TradeCard = {
+      id: 'card_' + Math.random().toString(36).slice(2, 10),
+      card_id: cardId,
+      name,
+      image_url: imagePreview || 'https://picsum.photos/seed/' + name + '/400/400',
+      creator_tag: creatorTag || 'Anonymous',
+      rarity_score: rarity,
+      trend_index: 50,
+      minting_supply: supply,
+      minted_count: 0,
+      market_price: startPrice,
+      previous_price: startPrice,
+      is_demo_asset: mode === 'demo',
+      tenant_id: null,
+      created_at: new Date().toISOString(),
     }
+
+    addCard(newCard)
+    setMintedCardId(cardId)
+    setMinted(true)
+    setMinting(false)
   }
 
   const resetForm = () => {
@@ -61,23 +75,15 @@ export default function CreatorStudio() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-3xl font-bold mb-2">
-          Creator <span className="gold-text">Studio</span>
-        </h1>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Creator <span className="gold-text">Studio</span></h1>
         <p className="text-apex-white-dim text-sm">
-          Design and mint your own digital collectible cards.
+          Design and {mode === 'demo' ? 'launch a Demo Card' : 'mint'} — it will appear instantly in your Dashboard and the Marketplace.
         </p>
       </motion.div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* Form */}
         <div className="card-surface p-6 space-y-5">
-          {/* Image Upload */}
           <div>
             <label className="text-xs text-apex-white-dim mb-2 block">Card Artwork</label>
             <label className="block">
@@ -98,7 +104,6 @@ export default function CreatorStudio() {
             </label>
           </div>
 
-          {/* Name */}
           <div>
             <label className="text-xs text-apex-white-dim mb-1.5 block">Card Name</label>
             <input
@@ -110,7 +115,6 @@ export default function CreatorStudio() {
             />
           </div>
 
-          {/* Creator Tag */}
           <div>
             <label className="text-xs text-apex-white-dim mb-1.5 block">Creator Tag</label>
             <input
@@ -122,63 +126,35 @@ export default function CreatorStudio() {
             />
           </div>
 
-          {/* Supply */}
           <div>
             <label className="text-xs text-apex-white-dim mb-2 block">
               Minting Supply: <span className="text-apex-gold font-mono">{supply}</span>
             </label>
-            <input
-              type="range"
-              min="1"
-              max="500"
-              value={supply}
-              onChange={(e) => setSupply(parseInt(e.target.value))}
-              className="w-full accent-apex-gold"
-            />
+            <input type="range" min="1" max="500" value={supply} onChange={(e) => setSupply(parseInt(e.target.value))} className="w-full accent-apex-gold" />
             <div className="flex justify-between text-[10px] text-apex-white-dim/50 mt-1">
-              <span>1/1 Unique</span>
-              <span>Limited Edition</span>
-              <span>1/500 Mass</span>
+              <span>1/1 Unique</span><span>Limited Edition</span><span>1/500 Mass</span>
             </div>
           </div>
 
-          {/* Rarity */}
           <div>
             <label className="text-xs text-apex-white-dim mb-2 block">
               Rarity Score: <span className="text-apex-gold font-mono">{rarity}</span>
             </label>
-            <input
-              type="range"
-              min="1"
-              max="100"
-              value={rarity}
-              onChange={(e) => setRarity(parseInt(e.target.value))}
-              className="w-full accent-apex-gold"
-            />
+            <input type="range" min="1" max="100" value={rarity} onChange={(e) => setRarity(parseInt(e.target.value))} className="w-full accent-apex-gold" />
             <div className="flex justify-between text-[10px] text-apex-white-dim/50 mt-1">
-              <span>Common</span>
-              <span>Epic</span>
-              <span>Legendary</span>
+              <span>Common</span><span>Epic</span><span>Legendary</span>
             </div>
           </div>
 
-          {/* Mint Button */}
           <button
             onClick={handleMint}
             disabled={!name || minting}
             className="w-full btn-gold py-3 rounded-lg text-sm inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {minting ? (
-              <>Minting...</>
-            ) : minted ? (
-              <><Check size={16} /> Minted Successfully</>
-            ) : (
-              <><Zap size={16} /> Mint Card</>
-            )}
+            {minting ? <>Minting...</> : minted ? <><Check size={16} /> Minted Successfully</> : <><Zap size={16} /> {mode === 'demo' ? 'Launch Demo Card' : 'Mint Card'}</>}
           </button>
         </div>
 
-        {/* Preview */}
         <div className="space-y-4">
           <h3 className="text-sm text-apex-white-dim font-medium">Live Preview</h3>
           <div className="card-surface overflow-hidden max-w-sm mx-auto">
@@ -200,9 +176,7 @@ export default function CreatorStudio() {
               </div>
               {mode === 'demo' && (
                 <div className="absolute top-2 left-2">
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-apex-gold/20 text-apex-gold gold-border">
-                    DEMO
-                  </span>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-apex-gold/20 text-apex-gold gold-border">DEMO</span>
                 </div>
               )}
             </div>
@@ -219,18 +193,11 @@ export default function CreatorStudio() {
           </div>
 
           {minted && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="card-surface p-4 text-center"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-surface p-4 text-center">
               <Check size={24} className="mx-auto mb-2 text-apex-green" />
-              <p className="text-sm text-apex-white font-medium">Card minted successfully!</p>
+              <p className="text-sm text-apex-white font-medium">Card launched — live in Dashboard & Marketplace!</p>
               <p className="text-xs text-apex-gold font-mono mt-1">Card ID: {mintedCardId}</p>
-              <button
-                onClick={resetForm}
-                className="btn-ghost mt-3 px-4 py-2 rounded-lg text-xs"
-              >
+              <button onClick={resetForm} className="btn-ghost mt-3 px-4 py-2 rounded-lg text-xs">
                 Mint Another Card
               </button>
             </motion.div>

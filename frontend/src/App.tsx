@@ -6,6 +6,8 @@ import Marketplace from './pages/Marketplace'
 import CreatorStudio from './pages/CreatorStudio'
 import Wallet from './pages/Wallet'
 import AuthPage from './pages/AuthPage'
+import DesignGallery from './pages/DesignGallery'
+import PortfolioFeed from './pages/PortfolioFeed'
 import Layout from './components/Common/Layout'
 import ProtectedRoute from './components/Common/ProtectedRoute'
 
@@ -20,6 +22,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/studio" element={<CreatorStudio />} />
+        <Route path="/gallery" element={<DesignGallery />} />
+        <Route path="/feed" element={<PortfolioFeed />} />
         <Route path="/wallet" element={<Wallet />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />

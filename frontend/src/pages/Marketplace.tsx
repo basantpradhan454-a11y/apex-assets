@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Filter, TrendingUp, TrendingDown } from 'lucide-react'
+import { Search } from 'lucide-react'
 import TradeCardItem from '../components/Cards/TradeCardItem'
 import ChartModal from '../components/Charts/ChartModal'
-import { mockCards } from '../api/mockData'
 import { useStore } from '../context/store'
 
 const sortOptions = ['Trending', 'Newest', 'Price: High', 'Price: Low', 'Rarest']
@@ -14,9 +13,9 @@ export default function Marketplace() {
   const [sortBy, setSortBy] = useState('Trending')
   const [rarityFilter, setRarityFilter] = useState('All')
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
-  const { mode } = useStore()
+  const { cards: allCards } = useStore()
 
-  let cards = mockCards.filter((c) =>
+  let cards = allCards.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.creator_tag.toLowerCase().includes(search.toLowerCase())
   )
@@ -46,20 +45,13 @@ export default function Marketplace() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-3xl font-bold mb-2">
-          <span className="gold-text">Marketplace</span>
-        </h1>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <h1 className="text-3xl font-bold mb-2"><span className="gold-text">Marketplace</span></h1>
         <p className="text-apex-white-dim text-sm">
           Discover, collect, and trade unique digital cards from creators worldwide.
         </p>
       </motion.div>
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="relative flex-1 min-w-[200px]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-apex-white-dim" />
@@ -83,7 +75,6 @@ export default function Marketplace() {
         </select>
       </div>
 
-      {/* Rarity Filters */}
       <div className="flex gap-2 mb-8 overflow-x-auto scrollbar-thin">
         {rarityFilters.map((r) => (
           <button
@@ -100,15 +91,9 @@ export default function Marketplace() {
         ))}
       </div>
 
-      {/* Cards Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {cards.map((card, i) => (
-          <motion.div
-            key={card.id}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.03 }}
-          >
+          <motion.div key={card.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
             <TradeCardItem card={card} onClick={() => setSelectedCardId(card.id)} />
           </motion.div>
         ))}
@@ -120,15 +105,12 @@ export default function Marketplace() {
         </div>
       )}
 
-      {/* Disclaimer */}
       <p className="text-[10px] text-apex-white-dim/60 text-center mt-12">
         Apex Assets is a digital collectible marketplace. Assets are virtual and intended for
         entertainment purposes only, holding no external financial value.
       </p>
 
-      {selectedCard && (
-        <ChartModal card={selectedCard} onClose={() => setSelectedCardId(null)} />
-      )}
+      {selectedCard && <ChartModal card={selectedCard} onClose={() => setSelectedCardId(null)} />}
     </div>
   )
 }
