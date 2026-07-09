@@ -24,7 +24,7 @@ export default function Wallet() {
     <div className="p-8 max-w-5xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
         <h1 className="text-3xl font-bold mb-2"><span className="gold-text">Wallet</span></h1>
-        <p className="text-apex-white-dim text-sm">Manage your credits, transactions, and KYC verification.</p>
+        <p className="text-apex-white-dim text-sm">Manage your credits, coin trades, and KYC verification.</p>
       </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
@@ -36,7 +36,7 @@ export default function Wallet() {
               </div>
               <div>
                 <p className="text-xs text-apex-white-dim">{mode === 'demo' ? 'Virtual Credits Balance' : 'Apex Credits Balance'}</p>
-                <p className="text-3xl font-bold gold-text">{balance?.toLocaleString()}</p>
+                <p className="text-3xl font-bold gold-text">{balance?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
               </div>
             </div>
             <span className={`px-3 py-1 text-xs rounded-full ${
@@ -127,7 +127,7 @@ export default function Wallet() {
           ) : (
             <div>
               <p className="text-xs text-apex-white-dim mb-4">
-                Complete KYC to unlock live trading with real credits and payment gateway access.
+                Complete KYC to unlock live coin trading with real credits and payment gateway access.
               </p>
               <button onClick={() => setShowKycForm(true)} className="w-full btn-ghost py-2.5 rounded-lg text-sm inline-flex items-center justify-center gap-2">
                 <Upload size={14} /> Start KYC Verification
@@ -148,7 +148,7 @@ export default function Wallet() {
         </div>
         <div className="divide-y divide-apex-black-border">
           {trades.length === 0 && (
-            <div className="p-8 text-center text-sm text-apex-white-dim">No trades yet — buy or sell a card to see history here.</div>
+            <div className="p-8 text-center text-sm text-apex-white-dim">No trades yet — buy or sell a coin to see history here.</div>
           )}
           {trades.map((tx) => (
             <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-apex-black-card/50 transition-colors">
@@ -157,15 +157,15 @@ export default function Wallet() {
                   {tx.type === 'buy' ? <ArrowDownCircle size={16} className="text-apex-red" /> : <ArrowUpCircle size={16} className="text-apex-green" />}
                 </div>
                 <div>
-                  <p className="text-sm text-apex-white font-medium">{tx.card_name}</p>
+                  <p className="text-sm text-apex-white font-medium">{tx.coin_name} <span className="text-apex-white-dim">${tx.ticker}</span></p>
                   <p className="text-xs text-apex-white-dim">
-                    {tx.type.toUpperCase()} · {tx.quantity}x · {tx.counterparty} · {new Date(tx.timestamp).toLocaleDateString()}
+                    {tx.type.toUpperCase()} · {tx.coin_amount.toLocaleString(undefined, { maximumFractionDigits: 0 })} {tx.ticker} · {tx.counterparty} · {new Date(tx.timestamp).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className={`text-sm font-mono font-medium ${tx.type === 'sell' ? 'text-apex-green' : 'text-apex-red'}`}>
-                  {tx.type === 'sell' ? '+' : '-'}{tx.total.toFixed(2)}
+                  {tx.type === 'sell' ? '+' : '-'}{tx.credit_amount.toFixed(2)}
                 </p>
                 <p className="text-xs text-apex-white-dim">{tx.mode}</p>
               </div>
@@ -175,7 +175,7 @@ export default function Wallet() {
       </div>
 
       <p className="text-[10px] text-apex-white-dim/60 text-center mt-8">
-        Apex Assets is a digital collectible marketplace. Assets are virtual and intended for
+        Apex Assets is a digital collectible marketplace. Coins are virtual and intended for
         entertainment purposes only, holding no external financial value.
       </p>
     </div>

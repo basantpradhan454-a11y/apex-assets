@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Upload, Plus, Zap, Check } from 'lucide-react'
-import { useStore, type TradeCard } from '../context/store'
+import { Upload, Rocket, Check } from 'lucide-react'
+import { useStore, CURVE_INITIAL_CREDIT_RESERVE, CURVE_INITIAL_COIN_RESERVE } from '../context/store'
 
 export default function CreatorStudio() {
-  const { user, mode, addCard, remixDesign, setRemixDesign } = useStore()
+  const { user, mode, launchCoin, remixDesign, setRemixDesign } = useStore()
   const [name, setName] = useState('')
-  const [supply, setSupply] = useState(10)
-  const [rarity, setRarity] = useState(50)
+  const [ticker, setTicker] = useState('')
+  const [description, setDescription] = useState('')
   const [creatorTag, setCreatorTag] = useState(user?.username || '')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [minting, setMinting] = useState(false)
-  const [minted, setMinted] = useState(false)
-  const [mintedCardId, setMintedCardId] = useState('')
+  const [launching, setLaunching] = useState(false)
+  const [launched, setLaunched] = useState(false)
+  const [launchedTicker, setLaunchedTicker] = useState('')
 
   // Load a design picked from the Design Gallery's "Remix" button
   useEffect(() => {
@@ -23,6 +23,8 @@ export default function CreatorStudio() {
     }
   }, [remixDesign, setRemixDesign])
 
+  const startPrice = CURVE_INITIAL_CREDIT_RESERVE / CURVE_INITIAL_COIN_RESERVE
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -32,70 +34,57 @@ export default function CreatorStudio() {
     }
   }
 
-  const handleMint = async () => {
-    if (!name) return
-    setMinting(true)
-    setMinted(false)
+  const handleLaunch = async () => {
+    if (!name || !ticker) return
+    setLaunching(true)
+    setLaunched(false)
     await new Promise((r) => setTimeout(r, 900))
 
-    const cardId = 'APEX-' + Math.random().toString(36).substr(2, 8).toUpperCase()
-    const startPrice = parseFloat((20 + Math.random() * 200).toFixed(2))
-
-    const newCard: TradeCard = {
-      id: 'card_' + Math.random().toString(36).slice(2, 10),
-      card_id: cardId,
+    const coin = launchCoin({
       name,
+      ticker,
       image_url: imagePreview || 'https://picsum.photos/seed/' + name + '/400/400',
+      description,
       creator_tag: creatorTag || 'Anonymous',
-      rarity_score: rarity,
-      trend_index: 50,
-      minting_supply: supply,
-      minted_count: 0,
-      market_price: startPrice,
-      previous_price: startPrice,
-      is_demo_asset: mode === 'demo',
-      tenant_id: null,
-      created_at: new Date().toISOString(),
-    }
+    })
 
-    addCard(newCard)
-    setMintedCardId(cardId)
-    setMinted(true)
-    setMinting(false)
+    setLaunchedTicker(coin.ticker)
+    setLaunched(true)
+    setLaunching(false)
   }
 
   const resetForm = () => {
     setName('')
-    setSupply(10)
-    setRarity(50)
+    setTicker('')
+    setDescription('')
     setImagePreview(null)
-    setMinted(false)
-    setMintedCardId('')
+    setLaunched(false)
+    setLaunchedTicker('')
   }
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Creator <span className="gold-text">Studio</span></h1>
+        <h1 className="text-3xl font-bold mb-2">Coin <span className="gold-text">Launchpad</span></h1>
         <p className="text-apex-white-dim text-sm">
-          Design and {mode === 'demo' ? 'launch a Demo Card' : 'mint'} — it will appear instantly in your Dashboard and the Marketplace.
+          Launch a coin instantly — pump.fun style. It goes live on a bonding curve immediately, no manual pricing.
         </p>
       </motion.div>
 
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="card-surface p-6 space-y-5">
           <div>
-            <label className="text-xs text-apex-white-dim mb-2 block">Card Artwork</label>
+            <label className="text-xs text-apex-white-dim mb-2 block">Coin Image</label>
             <label className="block">
               <div className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
                 imagePreview ? 'border-apex-gold/40' : 'border-apex-black-border hover:border-apex-gold/30'
               }`}>
                 {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="max-h-48 mx-auto rounded-lg" />
+                  <img src={imagePreview} alt="Preview" className="max-h-40 mx-auto rounded-full" />
                 ) : (
                   <>
                     <Upload size={28} className="mx-auto mb-3 text-apex-white-dim" />
-                    <p className="text-sm text-apex-white-dim">Click to upload image or GIF</p>
+                    <p className="text-sm text-apex-white-dim">Click to upload coin image or GIF</p>
                     <p className="text-xs text-apex-white-dim/50 mt-1">PNG, JPG, GIF up to 5MB</p>
                   </>
                 )}
@@ -105,13 +94,24 @@ export default function CreatorStudio() {
           </div>
 
           <div>
-            <label className="text-xs text-apex-white-dim mb-1.5 block">Card Name</label>
+            <label className="text-xs text-apex-white-dim mb-1.5 block">Coin Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="My Awesome Card"
+              placeholder="e.g. Golden Ape Genesis"
               className="w-full bg-apex-black-card border border-apex-black-border rounded-lg px-4 py-2.5 text-sm text-apex-white focus:gold-border focus:outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-apex-white-dim mb-1.5 block">Ticker</label>
+            <input
+              type="text"
+              value={ticker}
+              onChange={(e) => setTicker(e.target.value.toUpperCase().slice(0, 8))}
+              placeholder="e.g. GAPE"
+              className="w-full bg-apex-black-card border border-apex-black-border rounded-lg px-4 py-2.5 text-sm text-apex-white font-mono focus:gold-border focus:outline-none transition-all"
             />
           </div>
 
@@ -127,53 +127,51 @@ export default function CreatorStudio() {
           </div>
 
           <div>
-            <label className="text-xs text-apex-white-dim mb-2 block">
-              Minting Supply: <span className="text-apex-gold font-mono">{supply}</span>
-            </label>
-            <input type="range" min="1" max="500" value={supply} onChange={(e) => setSupply(parseInt(e.target.value))} className="w-full accent-apex-gold" />
-            <div className="flex justify-between text-[10px] text-apex-white-dim/50 mt-1">
-              <span>1/1 Unique</span><span>Limited Edition</span><span>1/500 Mass</span>
-            </div>
+            <label className="text-xs text-apex-white-dim mb-1.5 block">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What's this coin about?"
+              rows={2}
+              className="w-full bg-apex-black-card border border-apex-black-border rounded-lg px-4 py-2.5 text-sm text-apex-white focus:gold-border focus:outline-none transition-all resize-none"
+            />
           </div>
 
-          <div>
-            <label className="text-xs text-apex-white-dim mb-2 block">
-              Rarity Score: <span className="text-apex-gold font-mono">{rarity}</span>
-            </label>
-            <input type="range" min="1" max="100" value={rarity} onChange={(e) => setRarity(parseInt(e.target.value))} className="w-full accent-apex-gold" />
-            <div className="flex justify-between text-[10px] text-apex-white-dim/50 mt-1">
-              <span>Common</span><span>Epic</span><span>Legendary</span>
+          <div className="bg-apex-black-card rounded-lg p-4 space-y-1.5">
+            <div className="flex justify-between text-xs">
+              <span className="text-apex-white-dim">Total Supply</span>
+              <span className="text-apex-white font-mono">1,000,000,000</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-apex-white-dim">Starting Price</span>
+              <span className="text-apex-white font-mono">{startPrice.toExponential(3)}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-apex-white-dim">Pricing Model</span>
+              <span className="text-apex-gold">Constant-product bonding curve</span>
             </div>
           </div>
 
           <button
-            onClick={handleMint}
-            disabled={!name || minting}
+            onClick={handleLaunch}
+            disabled={!name || !ticker || launching}
             className="w-full btn-gold py-3 rounded-lg text-sm inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {minting ? <>Minting...</> : minted ? <><Check size={16} /> Minted Successfully</> : <><Zap size={16} /> {mode === 'demo' ? 'Launch Demo Card' : 'Mint Card'}</>}
+            {launching ? <>Launching...</> : launched ? <><Check size={16} /> Launched</> : <><Rocket size={16} /> {mode === 'demo' ? 'Launch Demo Coin' : 'Launch Coin'}</>}
           </button>
         </div>
 
         <div className="space-y-4">
           <h3 className="text-sm text-apex-white-dim font-medium">Live Preview</h3>
           <div className="card-surface overflow-hidden max-w-sm mx-auto">
-            <div className="relative h-64 bg-apex-black-card">
+            <div className="relative h-56 bg-apex-black-card flex items-center justify-center">
               {imagePreview ? (
-                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                <img src={imagePreview} alt="Preview" className="w-32 h-32 rounded-full object-cover gold-border" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Plus size={32} className="text-apex-white-dim/30" />
+                <div className="w-32 h-32 rounded-full bg-apex-black flex items-center justify-center gold-border">
+                  <Rocket size={28} className="text-apex-white-dim/30" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-apex-black to-transparent" />
-              <div className="absolute top-2 right-2">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-apex-black/80 ${
-                  rarity >= 90 ? 'text-apex-gold' : rarity >= 70 ? 'text-purple-400' : rarity >= 40 ? 'text-blue-400' : 'text-apex-white-dim'
-                }`}>
-                  {rarity >= 90 ? 'Legendary' : rarity >= 70 ? 'Epic' : rarity >= 40 ? 'Rare' : 'Common'}
-                </span>
-              </div>
               {mode === 'demo' && (
                 <div className="absolute top-2 left-2">
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-apex-gold/20 text-apex-gold gold-border">DEMO</span>
@@ -182,30 +180,30 @@ export default function CreatorStudio() {
             </div>
             <div className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-bold text-apex-white">{name || 'Card Name'}</h3>
-                <span className="text-xs text-apex-gold font-mono">--.--</span>
+                <h3 className="text-sm font-bold text-apex-white">{name || 'Coin Name'}</h3>
+                <span className="text-xs text-apex-gold font-mono">${ticker || 'TICKER'}</span>
               </div>
+              <p className="text-xs text-apex-white-dim mb-2 line-clamp-2">{description || 'Coin description...'}</p>
               <div className="flex items-center justify-between text-xs text-apex-white-dim">
-                <span>0/{supply} minted</span>
+                <span>Price: {startPrice.toExponential(2)}</span>
                 <span>by {creatorTag || 'Unknown'}</span>
               </div>
             </div>
           </div>
 
-          {minted && (
+          {launched && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-surface p-4 text-center">
               <Check size={24} className="mx-auto mb-2 text-apex-green" />
-              <p className="text-sm text-apex-white font-medium">Card launched — live in Dashboard & Marketplace!</p>
-              <p className="text-xs text-apex-gold font-mono mt-1">Card ID: {mintedCardId}</p>
+              <p className="text-sm text-apex-white font-medium">${launchedTicker} launched — live in Dashboard & Marketplace!</p>
               <button onClick={resetForm} className="btn-ghost mt-3 px-4 py-2 rounded-lg text-xs">
-                Mint Another Card
+                Launch Another Coin
               </button>
             </motion.div>
           )}
 
           <div className="card-surface p-4">
             <p className="text-[10px] text-apex-white-dim/60 text-center">
-              Apex Assets is a digital collectible marketplace. Assets are virtual and intended
+              Apex Assets is a digital collectible marketplace. Coins are virtual and intended
               for entertainment purposes only, holding no external financial value.
             </p>
           </div>

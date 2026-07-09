@@ -7,7 +7,7 @@ import { useStore } from '../context/store'
 interface FeedPost {
   id: string
   username: string
-  cardName: string
+  coinName: string
   designId?: string
   changePct: number
   thumbnail: string
@@ -16,9 +16,9 @@ interface FeedPost {
 }
 
 const seedFeed: FeedPost[] = [
-  { id: 'p1', username: '@ApexOfficial', cardName: 'Golden Ape Genesis', designId: 'dsn_001', changePct: 34.2, thumbnail: 'https://picsum.photos/seed/feed1/500/700', verified: true, tips: 128 },
-  { id: 'p2', username: '@NeonArt', cardName: 'Cosmic Rider', designId: 'dsn_013', changePct: 18.6, thumbnail: 'https://picsum.photos/seed/feed2/500/700', verified: true, tips: 74 },
-  { id: 'p3', username: '@VoltStudio', cardName: 'Volt Lynx', changePct: 9.1, thumbnail: 'https://picsum.photos/seed/feed3/500/700', verified: false, tips: 21 },
+  { id: 'p1', username: '@ApexOfficial', coinName: 'GAPE', designId: 'dsn_001', changePct: 34.2, thumbnail: 'https://picsum.photos/seed/feed1/500/700', verified: true, tips: 128 },
+  { id: 'p2', username: '@NeonArt', coinName: 'Cosmic Rider', designId: 'dsn_013', changePct: 18.6, thumbnail: 'https://picsum.photos/seed/feed2/500/700', verified: true, tips: 74 },
+  { id: 'p3', username: '@VoltStudio', coinName: 'Volt Lynx', changePct: 9.1, thumbnail: 'https://picsum.photos/seed/feed3/500/700', verified: false, tips: 21 },
 ]
 
 export default function PortfolioFeed() {
@@ -76,7 +76,7 @@ export default function PortfolioFeed() {
             className="card-surface overflow-hidden group"
           >
             <div className="relative h-80 bg-apex-black-card">
-              <img src={post.thumbnail} alt={post.cardName} className="w-full h-full object-cover" />
+              <img src={post.thumbnail} alt={post.coinName} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-apex-black via-apex-black/20 to-transparent" />
               <PlayCircle size={40} className="absolute inset-0 m-auto text-apex-white/70 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -90,7 +90,7 @@ export default function PortfolioFeed() {
               </div>
 
               <div className="absolute bottom-3 left-3 right-3">
-                <p className="text-sm font-semibold text-apex-white mb-1">{post.cardName}</p>
+                <p className="text-sm font-semibold text-apex-white mb-1">{post.coinName}</p>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1 text-xs font-mono text-apex-green">
                     <TrendingUp size={12} /> +{post.changePct}%
@@ -106,7 +106,7 @@ export default function PortfolioFeed() {
                 disabled={!post.designId}
                 className="flex-1 btn-ghost py-2 rounded-lg text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-30"
               >
-                <Copy size={12} /> Copy Trade Design
+                <Copy size={12} /> Copy Coin Design
               </button>
               <button className="flex-1 btn-gold py-2 rounded-lg text-xs inline-flex items-center justify-center gap-1.5">
                 <Coins size={12} /> Tip Creator

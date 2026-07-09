@@ -15,7 +15,7 @@ import Logo from './Logo'
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/marketplace', label: 'Marketplace', icon: Store },
-  { path: '/studio', label: 'Creator Studio', icon: Palette },
+  { path: '/studio', label: 'Coin Launchpad', icon: Palette },
   { path: '/gallery', label: 'Design Gallery', icon: Image },
   { path: '/feed', label: 'Portfolio Feed', icon: Video },
   { path: '/wallet', label: 'Wallet', icon: Wallet },
