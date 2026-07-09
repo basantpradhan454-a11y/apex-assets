@@ -26,6 +26,7 @@ class UserResponse(BaseModel):
     email: str
     role: str
     is_kyc_verified: bool
+    kyc_status: str
     virtual_balance: float
     real_wallet_balance: float
     tenant_id: Optional[str] = None
@@ -36,29 +37,33 @@ class UserResponse(BaseModel):
 
 # KYC
 class KYCRequest(BaseModel):
-    document_type: str  # aadhaar, pan, passport
-    document_url: str
+    aadhaar: str
+    pan: str
+    bank_account: str
 
-# Cards
-class MintCardRequest(BaseModel):
+# Coins
+class LaunchCoinRequest(BaseModel):
     name: str
+    ticker: str
     image_url: Optional[str] = None
+    description: Optional[str] = None
     creator_tag: str
-    rarity_score: int = 50
-    minting_supply: int
     is_demo_asset: bool = True
     tenant_id: Optional[str] = None
 
-class CardResponse(BaseModel):
+class CoinResponse(BaseModel):
     id: str
-    card_id: str
+    coin_id: str
+    ticker: str
     name: str
     image_url: Optional[str]
+    description: Optional[str]
     creator_tag: str
-    rarity_score: int
-    trend_index: float
-    minting_supply: int
-    minted_count: int
+    virtual_credit_reserve: float
+    virtual_coin_reserve: float
+    credits_raised: float
+    total_supply: float
+    is_graduated: bool
     market_price: float
     previous_price: float
     is_demo_asset: bool
@@ -67,16 +72,20 @@ class CardResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# Trades
-class TradeRequest(BaseModel):
-    card_id: str
-    trade_type: str  # buy, sell
-    amount: float
+# Trades (bonding curve buy/sell)
+class BuyCoinRequest(BaseModel):
+    credits_to_spend: float
+
+class SellCoinRequest(BaseModel):
+    coins_to_sell: float
 
 class TradeResponse(BaseModel):
     id: str
     status: str
     message: str
+    coin_amount: Optional[float] = None
+    credit_amount: Optional[float] = None
+    price_per_coin: Optional[float] = None
 
 # Wallet
 class BuyCreditsRequest(BaseModel):

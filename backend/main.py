@@ -6,7 +6,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database import engine, Base, get_db
-from routers import auth, cards, trades, wallet
+from routers import auth, coins, trades, wallet
 import uvicorn
 
 @asynccontextmanager
@@ -33,7 +33,7 @@ app.add_middleware(
 
 # Routers
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
-app.include_router(cards.router, prefix="/cards", tags=["Cards"])
+app.include_router(coins.router, prefix="/coins", tags=["Coins"])
 app.include_router(trades.router, prefix="/trades", tags=["Trades"])
 app.include_router(wallet.router, prefix="/wallet", tags=["Wallet"])
 
