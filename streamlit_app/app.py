@@ -1,7 +1,12 @@
 """
 Apex Assets — Streamlit Edition
-A digital collectible marketplace with pump.fun-style bonding curve coin trading.
-Matte Black + Brushed Gold theme.
+A self-contained digital collectible marketplace with pump.fun-style bonding curve
+coin trading. Matte Black + Brushed Gold theme.
+
+Persistence priority:
+  1. DATABASE_URL set  -> real Postgres persistence via db.py (this IS the backend)
+  2. BACKEND_URL set    -> optional separate FastAPI service (api_client.py)
+  3. neither            -> in-memory st.session_state (per-browser-session demo)
 """
 import streamlit as st
 import pandas as pd
@@ -10,6 +15,7 @@ from datetime import datetime
 
 import bonding_curve as bc
 import api_client as api
+import db
 
 st.set_page_config(page_title="Apex Assets", page_icon="◆", layout="wide", initial_sidebar_state="expanded")
 
@@ -47,7 +53,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-BACKEND_LIVE = api.is_backend_available()
+DB_MODE = db.is_enabled()
+BACKEND_LIVE = False if DB_MODE else api.is_backend_available()
+
+if DB_MODE:
+    db.init_db()
+    db.seed_if_empty()
 
 # ---------------------------------------------------------------------------
 # Session state init
@@ -55,6 +66,7 @@ BACKEND_LIVE = api.is_backend_available()
 if "authed" not in st.session_state:
     st.session_state.authed = False
     st.session_state.username = None
+    st.session_state.user_id = None
     st.session_state.token = None
     st.session_state.mode = "demo"
     st.session_state.virtual_balance = 10000.0
@@ -66,11 +78,12 @@ if "authed" not in st.session_state:
     st.session_state.trades = []
 
 
-def local_coin_by_id(cid):
-    for c in st.session_state.coins:
-        if c["id"] == cid:
-            return c
-    return None
+def sync_user_from_dict(u: dict):
+    st.session_state.user_id = u["id"]
+    st.session_state.virtual_balance = u["virtual_balance"]
+    st.session_state.real_wallet_balance = u["real_wallet_balance"]
+    st.session_state.is_kyc_verified = u["is_kyc_verified"]
+    st.session_state.kyc_status = u.get("kyc_status", "none")
 
 
 # ---------------------------------------------------------------------------
@@ -79,19 +92,36 @@ def local_coin_by_id(cid):
 with st.sidebar:
     st.markdown("## ◆ <span class='gold-text'>APEX ASSETS</span>", unsafe_allow_html=True)
     st.caption("Digital Collectible Marketplace")
-    st.caption(f"Backend: {'🟢 connected' if BACKEND_LIVE else '🟡 local demo mode'}")
+    if DB_MODE:
+        st.caption("🟢 Live — Postgres persistence")
+    elif BACKEND_LIVE:
+        st.caption("🟢 Connected to backend API")
+    else:
+        st.caption("🟡 Local demo mode (no DB configured)")
     st.divider()
 
     if not st.session_state.authed:
-        tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
-        with tab_signup:
-            su_name = st.text_input("Username", key="su_name")
-            su_email = st.text_input("Email", key="su_email")
-            su_pass = st.text_input("Password", type="password", key="su_pass")
-            if st.button("Create Account", use_container_width=True):
-                if BACKEND_LIVE:
+        st.markdown("##### Sign in")
+        st.caption("Username only — closed-loop virtual credits, no password needed for the demo.")
+        name_input = st.text_input("Username", key="name_input")
+        if st.button("Enter Apex Assets", use_container_width=True):
+            if name_input:
+                if DB_MODE:
+                    u = db.get_or_create_user(name_input)
+                    sync_user_from_dict(u)
+                    st.session_state.username = name_input
+                    st.session_state.authed = True
+                    st.rerun()
+                elif BACKEND_LIVE:
                     try:
-                        res = api.signup(su_name, su_email, su_pass)
+                        res = api.login(name_input, "demo")
+                    except Exception:
+                        try:
+                            res = api.signup(name_input, f"{name_input}@apexassets.demo", "demo12345")
+                        except Exception as e:
+                            st.error(f"Couldn't reach backend: {e}")
+                            res = None
+                    if res:
                         st.session_state.token = res["token"]
                         u = res["user"]
                         st.session_state.username = u["username"]
@@ -100,39 +130,12 @@ with st.sidebar:
                         st.session_state.is_kyc_verified = u["is_kyc_verified"]
                         st.session_state.authed = True
                         st.rerun()
-                    except Exception as e:
-                        st.error(f"Signup failed: {e}")
                 else:
-                    if su_name:
-                        st.session_state.username = su_name
-                        st.session_state.authed = True
-                        st.rerun()
-                    else:
-                        st.warning("Enter a username")
-        with tab_login:
-            li_email = st.text_input("Email or Username", key="li_email")
-            li_pass = st.text_input("Password", type="password", key="li_pass")
-            if st.button("Log In", use_container_width=True):
-                if BACKEND_LIVE:
-                    try:
-                        res = api.login(li_email, li_pass)
-                        st.session_state.token = res["token"]
-                        u = res["user"]
-                        st.session_state.username = u["username"]
-                        st.session_state.virtual_balance = u["virtual_balance"]
-                        st.session_state.real_wallet_balance = u["real_wallet_balance"]
-                        st.session_state.is_kyc_verified = u["is_kyc_verified"]
-                        st.session_state.authed = True
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Login failed: {e}")
-                else:
-                    if li_email:
-                        st.session_state.username = li_email
-                        st.session_state.authed = True
-                        st.rerun()
-                    else:
-                        st.warning("Enter a username")
+                    st.session_state.username = name_input
+                    st.session_state.authed = True
+                    st.rerun()
+            else:
+                st.warning("Enter a username")
         st.stop()
 
     st.success(f"👤 {st.session_state.username}")
@@ -150,9 +153,15 @@ with st.sidebar:
         st.rerun()
 
 # ---------------------------------------------------------------------------
-# Data loading (backend or local)
+# Data loading (db / backend / local)
 # ---------------------------------------------------------------------------
 def load_coins():
+    if DB_MODE:
+        try:
+            return db.list_coins()
+        except Exception as e:
+            st.error(f"DB error loading coins: {e}")
+            return []
     if BACKEND_LIVE:
         try:
             return api.list_coins()
@@ -162,6 +171,9 @@ def load_coins():
 
 
 coins = load_coins()
+
+if DB_MODE and st.session_state.get("user_id"):
+    st.session_state.holdings = db.get_holdings(st.session_state.user_id)
 
 
 def render_chart(coin, timeframe="1H"):
@@ -260,6 +272,18 @@ def do_buy(coin, credits_to_spend):
     if credits_to_spend <= 0:
         st.warning("Enter a valid amount")
         return
+
+    if DB_MODE:
+        try:
+            res = db.buy_coin(st.session_state.user_id, coin["id"], credits_to_spend, st.session_state.mode)
+            sync_user_from_dict(db.refresh_user(st.session_state.user_id))
+            msg = f"{coin['ticker']} just graduated to the Marketplace!" if res["graduated"] else f"Bought {res['coin_amount']:,.0f} {coin['ticker']}"
+            st.success(msg)
+        except ValueError as e:
+            st.error(str(e))
+        st.rerun()
+        return
+
     if BACKEND_LIVE and st.session_state.token:
         try:
             res = api.buy_coin(st.session_state.token, coin["id"], credits_to_spend)
@@ -289,6 +313,16 @@ def do_buy(coin, credits_to_spend):
 
 
 def do_sell(coin, coins_to_sell):
+    if DB_MODE:
+        try:
+            res = db.sell_coin(st.session_state.user_id, coin["id"], coins_to_sell, st.session_state.mode)
+            sync_user_from_dict(db.refresh_user(st.session_state.user_id))
+            st.success(f"Sold {res['coin_amount']:,.0f} {coin['ticker']}")
+        except ValueError as e:
+            st.error(str(e))
+        st.rerun()
+        return
+
     held = st.session_state.holdings.get(coin["id"], 0)
     if coins_to_sell <= 0 or coins_to_sell > held:
         st.error(f"You only hold {held:,.0f} {coin['ticker']}")
@@ -394,7 +428,13 @@ elif page == "Coin Launchpad":
 
         if st.button("🚀 Launch Coin", use_container_width=True, disabled=not (name and ticker)):
             img = image_url or f"https://picsum.photos/seed/{name.replace(' ', '')}/400/400"
-            if BACKEND_LIVE and st.session_state.token:
+            if DB_MODE:
+                try:
+                    res = db.launch_coin(name, ticker, img, description, creator_tag, st.session_state.mode == "demo")
+                    st.success(f"${res['ticker']} launched — live in Dashboard & Marketplace!")
+                except Exception as e:
+                    st.error(f"Launch failed: {e}")
+            elif BACKEND_LIVE and st.session_state.token:
                 try:
                     res = api.launch_coin(st.session_state.token, name, ticker, img, description, creator_tag, st.session_state.mode == "demo")
                     st.success(f"${res['ticker']} launched — live in Dashboard & Marketplace!")
@@ -438,7 +478,9 @@ elif page == "Wallet":
                 bank = st.text_input("Bank Account Number")
                 submitted = st.form_submit_button("Submit for Verification")
                 if submitted and aadhaar and pan and bank:
-                    if BACKEND_LIVE and st.session_state.token:
+                    if DB_MODE:
+                        db.submit_kyc(st.session_state.user_id, aadhaar, pan, bank)
+                    elif BACKEND_LIVE and st.session_state.token:
                         try:
                             api.submit_kyc(st.session_state.token, aadhaar, pan, bank)
                         except Exception as e:
@@ -448,7 +490,9 @@ elif page == "Wallet":
                     st.rerun()
 
     st.markdown("### Transaction History")
-    if BACKEND_LIVE and st.session_state.token:
+    if DB_MODE:
+        trades = db.get_trade_history(st.session_state.user_id)
+    elif BACKEND_LIVE and st.session_state.token:
         try:
             trades = api.get_trade_history(st.session_state.token)
         except Exception:
